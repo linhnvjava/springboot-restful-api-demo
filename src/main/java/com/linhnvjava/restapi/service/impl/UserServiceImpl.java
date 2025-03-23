@@ -2,10 +2,12 @@ package com.linhnvjava.restapi.service.impl;
 
 import com.linhnvjava.restapi.dto.UserDto;
 import com.linhnvjava.restapi.entity.User;
+import com.linhnvjava.restapi.mapper.AutoUserMapper;
 import com.linhnvjava.restapi.mapper.UserMapper;
 import com.linhnvjava.restapi.repository.UserRepository;
 import com.linhnvjava.restapi.service.UserService;
 import lombok.AllArgsConstructor;
+import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -17,6 +19,8 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
 
+    private final ModelMapper modelMapper;
+
     @Override
     public List<UserDto> getAllUsers() {
         List<User> users = userRepository.findAll();
@@ -27,14 +31,14 @@ public class UserServiceImpl implements UserService {
     public UserDto getUserById(Long id) {
         Optional<User> optionalUser = userRepository.findById(id);
         User existingUser = optionalUser.get();
-        return UserMapper.mapToUserDto(existingUser);
+        return modelMapper.map(existingUser, UserDto.class);
     }
 
     @Override
     public UserDto createUser(UserDto userDto) {
-        User user = UserMapper.mapToUser(userDto);
+        User user = AutoUserMapper.MAPPER.mapToUser(userDto);
         User savedUser = userRepository.save(user);
-        return UserMapper.mapToUserDto(savedUser);
+        return AutoUserMapper.MAPPER.mapToUserDto(savedUser);
     }
 
     @Override
