@@ -2,6 +2,8 @@ package com.linhnvjava.restapi.service.impl;
 
 import com.linhnvjava.restapi.dto.UserDto;
 import com.linhnvjava.restapi.entity.User;
+import com.linhnvjava.restapi.exception.EmailAlreadyExistException;
+import com.linhnvjava.restapi.exception.ResourceNotFoundException;
 import com.linhnvjava.restapi.mapper.AutoUserMapper;
 import com.linhnvjava.restapi.mapper.UserMapper;
 import com.linhnvjava.restapi.repository.UserRepository;
@@ -29,13 +31,18 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDto getUserById(Long id) {
-        Optional<User> optionalUser = userRepository.findById(id);
-        User existingUser = optionalUser.get();
+        User existingUser = userRepository.findById(id).orElseThrow(
+                () -> new ResourceNotFoundException("User", "id", id)
+        );
         return modelMapper.map(existingUser, UserDto.class);
     }
 
     @Override
     public UserDto createUser(UserDto userDto) {
+        Optional<User> optionalUser = userRepository.findByEmail(userDto.getEmail());
+        optionalUser.ifPresent(user -> {
+            throw new EmailAlreadyExistException("Email already exist for user");
+        });
         User user = AutoUserMapper.MAPPER.mapToUser(userDto);
         User savedUser = userRepository.save(user);
         return AutoUserMapper.MAPPER.mapToUserDto(savedUser);
@@ -43,7 +50,9 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDto updateUser(UserDto user) {
-        User existingUser = userRepository.findById(user.getId()).get();
+        User existingUser = userRepository.findById(user.getId()).orElseThrow(
+                () -> new ResourceNotFoundException("User", "id", user.getId())
+        );
         existingUser.setName(user.getName());
         existingUser.setEmail(user.getEmail());
         User updatedUser = userRepository.save(existingUser);
